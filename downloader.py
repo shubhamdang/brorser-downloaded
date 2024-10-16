@@ -3,6 +3,48 @@ import requests
 import shutil
 import zipfile
 
+
+import requests
+import platform
+
+def get_windows_version():
+    version = platform.system()
+    if version == "Windows":
+        release = platform.release()
+        if release == '10':
+            return 'win10'
+        elif release == '11':
+            return 'win11'
+    return None
+
+def fetch_versions(browser, os):
+    url = f"https://stage-api.lambdatestinternal.com/api/v2/capability?grid=selenium&browser={browser}&os={os}"
+    response = requests.get(url)
+    return response.json()
+
+def get_latest_versions(browser):
+    detected_os_version = get_windows_version()
+    if detected_os_version is None:
+        print("Not running on Windows")
+        return None
+
+    data = fetch_versions(browser, detected_os_version)
+    beta_versions = []
+    stable_versions = []
+
+    # Iterate through the versions and extract the latest 10 for beta and stable
+    for version in data['versions']:
+        if version['channel_type'] == 'beta' and len(beta_versions) < 10:
+            beta_versions.append(version['version'])
+        elif version['channel_type'] == 'stable' and len(stable_versions) < 10:
+            stable_versions.append(version['version'])
+
+    return {
+        'beta_versions': beta_versions,
+        'stable_versions': stable_versions
+    }
+
+
 # Function to create directories if they don't exist
 def create_directories(directories):
     for directory in directories:
@@ -46,8 +88,18 @@ def delete_directory(path):
         print(f"Error deleting {path}: {e}")
 
 # Chrome and Firefox configuration
-chrome_versions = range(90, 100)  # Example versions for Chrome
-firefox_versions = range(90, 100)  # Example versions for Firefox
+
+chrome_versions = get_latest_versions('chrome')
+edge_versions = get_latest_versions('edge')
+firefox_versions = get_latest_versions('firefox')
+
+# chrome_versions_list = chrome_versions['beta_versions'] + chrome_versions['stable_versions']
+# edge_versions_list = edge_versions['beta_versions'] + edge_versions['stable_versions']
+# firefox_versions_list = firefox_versions['beta_versions'] + firefox_versions['stable_versions']
+
+chrome_versions_list =  chrome_versions['stable_versions']
+edge_versions_list =  edge_versions['stable_versions']
+firefox_versions_list =  firefox_versions['stable_versions']
 
 # Directories for Chrome
 chrome_folder = "G:\\chrome\\"
@@ -57,51 +109,62 @@ chrome_drivers_folder = "G:\\drivers\\Chrome\\"
 # Directories for Firefox
 firefox_folder = "G:\\firefox\\"
 new_firefox_folder = "G:\\New_browser_firefox\\"
-firefox_drivers_folder = "G:\\drivers\\Firefox\\"
+
+# Directories for Edge
+edge_folder = "C:\\Program Files (x86)\\Microsoft\\EdgeCore"
+new_edge_folder = "G:\\New_browser_edge\\"
+edge_drivers_folder = "G:\\drivers\\edge"
 
 # 1. Create directories for Chrome and Firefox
-create_directories([chrome_folder, new_chrome_folder, firefox_folder, new_firefox_folder])
+create_directories([chrome_folder, new_chrome_folder, firefox_folder, new_firefox_folder, edge_folder, new_edge_folder, edge_drivers_folder])
 
-# 2. Download Chrome browser
-for version in chrome_versions:
-    url = f"https://ltbrowserdeploy.lambdatest.com/windows/chrome/Google+Chrome+{version}.0.zip"
+
+for version in chrome_versions_list:
+    #Download Chrome browser
+    url = f"https://ltbrowserdeploy.lambdatest.com/windows/chrome/Google+Chrome+{version}.zip"
     download_file(url, new_chrome_folder)
 
-# 3. Download Chrome drivers
-for version in chrome_versions:
-    url = f"https://ltbrowserdeploy.lambdatest.com/windows/drivers/Chrome/{version}.0.zip"
+    # Download Chrome drivers
+    url = f"https://ltbrowserdeploy.lambdatest.com/windows/drivers/Chrome/{version}.zip"
     download_file(url, new_chrome_folder)
 
-# 4. Unzip Chrome drivers
-for version in chrome_versions:
-    zip_path = os.path.join(new_chrome_folder, f"{version}.0.zip")
+    #Unzip Chrome drivers
+    zip_path = os.path.join(new_chrome_folder, f"{version}.zip")
     unzip_file(zip_path, chrome_drivers_folder)
 
-# 5. Unzip Chrome browser
-for version in chrome_versions:
-    zip_path = os.path.join(new_chrome_folder, f"Google+Chrome+{version}.0.zip")
+    #Unzip Chrome browser
+    zip_path = os.path.join(new_chrome_folder, f"Google+Chrome+{version}.zip")
     unzip_file(zip_path, chrome_folder)
 
+delete_directory(new_chrome_folder)
+
+
 # 6. Download Firefox browser
-for version in firefox_versions:
-    url = f"https://ltbrowserdeploy.lambdatest.com/windows/firefox/{version}.0.zip"
+for version in firefox_versions_list:
+    url = f"https://ltbrowserdeploy.lambdatest.com/windows/firefox/{version}.zip"
     download_file(url, new_firefox_folder)
 
-# 7. Download Firefox drivers
-for version in firefox_versions:
-    url = f"https://ltbrowserdeploy.lambdatest.com/windows/drivers/Firefox/{version}.0.zip"
-    download_file(url, new_firefox_folder)
-
-# 8. Unzip Firefox drivers
-for version in firefox_versions:
-    zip_path = os.path.join(new_firefox_folder, f"{version}.0.zip")
-    unzip_file(zip_path, firefox_drivers_folder)
-
-# 9. Unzip Firefox browser
-for version in firefox_versions:
-    zip_path = os.path.join(new_firefox_folder, f"{version}.0.zip")
+    zip_path = os.path.join(new_firefox_folder, f"{version}.zip")
     unzip_file(zip_path, firefox_folder)
 
-# 10. Delete temporary Chrome and Firefox browser and driver zip folders
-delete_directory(new_chrome_folder)
 delete_directory(new_firefox_folder)
+
+
+for version in edge_versions_list:
+    #Download Edge browser
+    url = f"https://ltbrowserdeploy.lambdatest.com/windows/edge/Edge+{version}.zip"
+    download_file(url, new_edge_folder)
+
+    # Download Edge drivers
+    url = f"https://ltbrowserdeploy.lambdatest.com/windows/drivers/Edge/{version}.zip"
+    download_file(url, new_edge_folder)
+
+    #Unzip Edge drivers
+    zip_path = os.path.join(new_edge_folder, f"{version}.zip")
+    unzip_file(zip_path, edge_drivers_folder)
+
+    #Unzip Edge browser
+    zip_path = os.path.join(new_edge_folder, f"Edge+{version}.zip")
+    unzip_file(zip_path, edge_folder)
+
+delete_directory(new_edge_folder)
