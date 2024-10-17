@@ -57,29 +57,29 @@ jobs:
             attempts = 0
             while attempts < max_retries:
                 try:
-                    print(f"Attempt {attempts + 1} of {max_retries}")
+                    print(f'Attempt {attempts + 1} of {max_retries}')
                     result = session.run_ps(script)
         
                     # Check if the command executed successfully
                     if result.status_code == 0:
-                        print("Command executed successfully.")
-                        print("STDOUT:", result.std_out.decode())
-                        print("STDERR:", result.std_err.decode())
+                        print('Command executed successfully.')
+                        print('STDOUT:', result.std_out.decode())
+                        print('STDERR:', result.std_err.decode())
                         return
                     else:
-                        print("Command failed with status code:", result.status_code)
-                        print("STDOUT:", result.std_out.decode())
-                        print("STDERR:", result.std_err.decode())
+                        print('Command failed with status code:', result.status_code)
+                        print('STDOUT:', result.std_out.decode())
+                        print('STDERR:', result.std_err.decode())
         
                 except Exception as e:
-                    print(f"Error occurred: {e}")
+                    print(f'Error occurred: {e}')
         
                 attempts += 1
                 if attempts < max_retries:
-                    print("Retrying...")
+                    print('Retrying...')
                     time.sleep(5)  # Wait for 5 seconds before retrying
         
-            print("Max retries reached. Command execution failed.")
+            print('Max retries reached. Command execution failed.')
         
         # Run the script with retry logic
         run_script_with_retries(session, powershell_script)
