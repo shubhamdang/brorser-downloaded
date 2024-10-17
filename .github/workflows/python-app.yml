@@ -59,7 +59,8 @@ jobs:
     
             export NIC_ID=$(az vm show  --name "$VM_NAME" --resource-group "$RESOURCE_GROUP_NAME" --show-details --subscription "$SUBSCRIPTION_ID"  --query "networkProfile.networkInterfaces[0].id" -o tsv)
             echo "REMOTE_HOSTNAME=$(az network nic show  --ids "$NIC_ID" --resource-group "$RESOURCE_GROUP_NAME" --subscription "$SUBSCRIPTION_ID" --query "ipConfigurations[0].publicIPAddress.id")" >> $GITHUB_ENV
-
+            echo $REMOTE_HOSTNAME
+            
       - name: Run remote PowerShell script
         env:
             REMOTE_HOSTNAME: ${{ env.REMOTE_HOSTNAME }}
