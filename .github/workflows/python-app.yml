@@ -37,8 +37,6 @@ jobs:
         username = os.getenv('REMOTE_USERNAME')
         password = os.getenv('REMOTE_PASSWORD')
         
-        print(f"{hostname} {username} {password}")
-        
         # Check if environment variables are set
         if not hostname or not username or not password:
             raise ValueError("Environment variables REMOTE_HOSTNAME, REMOTE_USERNAME, and REMOTE_PASSWORD must be set")
