@@ -39,7 +39,7 @@ jobs:
         
         # Check if environment variables are set
         if not hostname or not username or not password:
-            raise ValueError("Environment variables REMOTE_HOSTNAME, REMOTE_USERNAME, and REMOTE_PASSWORD must be set")
+            raise ValueError('Environment variables REMOTE_HOSTNAME, REMOTE_USERNAME, and REMOTE_PASSWORD must be set')
         
         # Create a WinRM session with a 180-second operation timeout
         session = winrm.Session(f'http://{hostname}', auth=(username, password),operation_timeout_sec=420, read_timeout_sec=450)
