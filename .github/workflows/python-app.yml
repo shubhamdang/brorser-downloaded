@@ -1,20 +1,40 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Python application
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      jira:
+        type: string
+        required: true
 
-permissions:
-  contents: read
+      resource_group_name:
+        type: choice
+        description: Select the resources Group Names
+        required: true
+        default: "hypertest-stage"
+        options:
+          - hypertest-stage
+
+      virtual_machine_name:
+        type: string
+        description: The name of VM to create
+        required: true
+
+
 
 jobs:
   run_script_on_vm:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+    needs: [create-os-gallery-image]
+    env:
+      SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      RESOURCE_GROUP_NAME: ${{ github.event.inputs.resource_group_name }}
+      VM_NAME: ${{ github.event.inputs.virtual_machine_name }}
+    defaults:
+      run:
+        shell: bash
+
     steps:
     - name: Install dependencies
       run: |
@@ -22,9 +42,27 @@ jobs:
         sudo apt-get install -y python3-pip
         pip3 install pywinrm
 
+    - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Azure CLI script
+    uses: azure/cli@v2
+    with:
+      azcliversion: latest
+      inlineScript: |
+
+        echo "Azure Account logged in Subscription ID "$SUBSCRIPTION_ID" ..."
+        az account show
+
+        export NIC_ID=$(az vm show  --name "$VM_NAME" --resource-group "$RESOURCE_GROUP_NAME" --show-details --subscription "$SUBSCRIPTION_ID"  --query "networkProfile.networkInterfaces[0].id" -o tsv)
+        export REMOTE_HOSTNAME=$(az network nic show  --ids "$NIC_ID" --resource-group "$RESOURCE_GROUP_NAME" --subscription "$SUBSCRIPTION_ID" --query "ipConfigurations[0].publicIPAddress.id")
+        echo "NIC ID $NIC_ID , PUBLIC_IP_ID $PUBLIC_IP_ID"
+
+
     - name: Run remote PowerShell script
       env:
-        REMOTE_HOSTNAME: ${{ secrets.REMOTE_HOSTNAME }}
         REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
         REMOTE_PASSWORD: ${{ secrets.REMOTE_PASSWORD }}
       run: |
@@ -84,4 +122,3 @@ jobs:
         # Run the script with retry logic
         run_script_with_retries(session, powershell_script)
         "
-
