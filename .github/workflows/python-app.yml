@@ -62,6 +62,7 @@ jobs:
 
       - name: Run remote PowerShell script
         env:
+            REMOTE_HOSTNAME: ${{ env.REMOTE_HOSTNAME }}
             REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
             REMOTE_PASSWORD: ${{ secrets.REMOTE_PASSWORD }}
         run: |
