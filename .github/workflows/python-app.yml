@@ -45,7 +45,7 @@ jobs:
         pip3 install pywinrm
 
     - name: Azure login
-        uses: azure/login@v1
+      uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
