@@ -57,9 +57,10 @@ jobs:
             echo "Azure Account logged in Subscription ID "$SUBSCRIPTION_ID" ..."
             az account show
     
-            export NIC_ID=$(az vm show  --name "$VM_NAME" --resource-group "$RESOURCE_GROUP_NAME" --show-details --subscription "$SUBSCRIPTION_ID"  --query "networkProfile.networkInterfaces[0].id" -o tsv)
-            export REMOTE_HOSTNAME=$(az network nic show  --ids "$NIC_ID" --resource-group "$RESOURCE_GROUP_NAME" --subscription "$SUBSCRIPTION_ID" --query "ipConfigurations[0].publicIPAddress.id")
-            echo "REMOTE_HOSTNAME=$REMOTE_HOSTNAME" 
+            export NIC_ID=$(az vm show --name window-11-shubham-16-oct --resource-group hypertest-stage --show-details --subscription e4e753ea-67e1-40b6-af99-875a23dbc046 --query "networkProfile.networkInterfaces[0].id" -o tsv)
+            export NIC_PUBLIC_ID=$(az network nic show --ids "$NIC_ID" --query "ipConfigurations[0].publicIPAddress.id" -o tsv)
+            export PUBLIC_IP=$(az network public-ip show --ids "$NIC_PUBLIC_ID" --query "ipAddress" -o tsv)
+            echo "REMOTE_HOSTNAME=$REMOTE_HOSTNAME" >> $GITHUB_ENV
             
       - name: Run remote PowerShell script
         env:
