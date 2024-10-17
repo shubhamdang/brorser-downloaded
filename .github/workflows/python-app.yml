@@ -45,7 +45,7 @@ jobs:
         session = winrm.Session(f'http://{hostname}', auth=(username, password),operation_timeout_sec=420, read_timeout_sec=450)
         
         # Define the PowerShell script to run remotely
-        powershell_script = '''
+        powershell_script = r'''
         Invoke-WebRequest -Uri "https://raw.githubusercontent.com/shubhamdang/brorser-downloaded/refs/heads/main/downloader.py" -OutFile "C:\\Users\\ltuser\\downloader.py"
         python C:\\Users\\ltuser\\downloader.py
         Remove-Item "C:\\Users\\ltuser\\downloader.py"
