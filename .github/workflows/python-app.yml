@@ -38,89 +38,87 @@ jobs:
         shell: bash
 
     steps:
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-pip
-        pip3 install pywinrm
-
-    - name: Azure login
-      uses: azure/login@v1
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install pywinrm
+  
+      - name: Azure login
+        uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Azure CLI script
-    uses: azure/cli@v2
-    with:
-      azcliversion: latest
-      inlineScript: |
-
-        echo "Azure Account logged in Subscription ID "$SUBSCRIPTION_ID" ..."
-        az account show
-
-        export NIC_ID=$(az vm show  --name "$VM_NAME" --resource-group "$RESOURCE_GROUP_NAME" --show-details --subscription "$SUBSCRIPTION_ID"  --query "networkProfile.networkInterfaces[0].id" -o tsv)
-        export REMOTE_HOSTNAME=$(az network nic show  --ids "$NIC_ID" --resource-group "$RESOURCE_GROUP_NAME" --subscription "$SUBSCRIPTION_ID" --query "ipConfigurations[0].publicIPAddress.id")
-        echo "NIC ID $NIC_ID , PUBLIC_IP_ID $PUBLIC_IP_ID"
-
-
-    - name: Run remote PowerShell script
-      env:
-        REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
-        REMOTE_PASSWORD: ${{ secrets.REMOTE_PASSWORD }}
-      run: |
-        python3 -c "import winrm
-        import os
-        import time
+  
+      - name: Azure CLI script
+        uses: azure/cli@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            echo "Azure Account logged in Subscription ID "$SUBSCRIPTION_ID" ..."
+            az account show
     
-        # Fetch credentials from environment variables
-        hostname = os.getenv('REMOTE_HOSTNAME')
-        username = os.getenv('REMOTE_USERNAME')
-        password = os.getenv('REMOTE_PASSWORD')
-        
-        # Check if environment variables are set
-        if not hostname or not username or not password:
-            raise ValueError('Environment variables REMOTE_HOSTNAME, REMOTE_USERNAME, and REMOTE_PASSWORD must be set')
-        
-        # Create a WinRM session with a 180-second operation timeout
-        session = winrm.Session(f'http://{hostname}', auth=(username, password),operation_timeout_sec=420, read_timeout_sec=450)
-        
-        # Define the PowerShell script to run remotely
-        powershell_script = r'''
-        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/shubhamdang/brorser-downloaded/refs/heads/main/downloader.py" -OutFile "C:\\Users\\ltuser\\downloader.py"
-        python C:\\Users\\ltuser\\downloader.py
-        Remove-Item "C:\\Users\\ltuser\\downloader.py"
-        Clear-RecycleBin -Force -ErrorAction SilentlyContinue
-        '''
-        
-        # Function to run the PowerShell script with retry logic
-        def run_script_with_retries(session, script, max_retries=3):
-            attempts = 0
-            while attempts < max_retries:
-                try:
-                    print(f'Attempt {attempts + 1} of {max_retries}')
-                    result = session.run_ps(script)
-        
-                    # Check if the command executed successfully
-                    if result.status_code == 0:
-                        print('Command executed successfully.')
-                        print('STDOUT:', result.std_out.decode())
-                        print('STDERR:', result.std_err.decode())
-                        return
-                    else:
-                        print('Command failed with status code:', result.status_code)
-                        print('STDOUT:', result.std_out.decode())
-                        print('STDERR:', result.std_err.decode())
-        
-                except Exception as e:
-                    print(f'Error occurred: {e}')
-        
-                attempts += 1
-                if attempts < max_retries:
-                    print('Retrying...')
-                    time.sleep(5)  # Wait for 5 seconds before retrying
-        
-            print('Max retries reached. Command execution failed.')
-        
-        # Run the script with retry logic
-        run_script_with_retries(session, powershell_script)
-        "
+            export NIC_ID=$(az vm show  --name "$VM_NAME" --resource-group "$RESOURCE_GROUP_NAME" --show-details --subscription "$SUBSCRIPTION_ID"  --query "networkProfile.networkInterfaces[0].id" -o tsv)
+            export REMOTE_HOSTNAME=$(az network nic show  --ids "$NIC_ID" --resource-group "$RESOURCE_GROUP_NAME" --subscription "$SUBSCRIPTION_ID" --query "ipConfigurations[0].publicIPAddress.id")
+            
+
+      - name: Run remote PowerShell script
+        env:
+            REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
+            REMOTE_PASSWORD: ${{ secrets.REMOTE_PASSWORD }}
+        run: |
+          python3 -c "import winrm
+          import os
+          import time
+      
+          # Fetch credentials from environment variables
+          hostname = os.getenv('REMOTE_HOSTNAME')
+          username = os.getenv('REMOTE_USERNAME')
+          password = os.getenv('REMOTE_PASSWORD')
+          
+          # Check if environment variables are set
+          if not hostname or not username or not password:
+              raise ValueError('Environment variables REMOTE_HOSTNAME, REMOTE_USERNAME, and REMOTE_PASSWORD must be set')
+          
+          # Create a WinRM session with a 180-second operation timeout
+          session = winrm.Session(f'http://{hostname}', auth=(username, password),operation_timeout_sec=420, read_timeout_sec=450)
+          
+          # Define the PowerShell script to run remotely
+          powershell_script = r'''
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/shubhamdang/brorser-downloaded/refs/heads/main/downloader.py" -OutFile "C:\\Users\\ltuser\\downloader.py"
+          python C:\\Users\\ltuser\\downloader.py
+          Remove-Item "C:\\Users\\ltuser\\downloader.py"
+          Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+          '''
+          
+          # Function to run the PowerShell script with retry logic
+          def run_script_with_retries(session, script, max_retries=3):
+              attempts = 0
+              while attempts < max_retries:
+                  try:
+                      print(f'Attempt {attempts + 1} of {max_retries}')
+                      result = session.run_ps(script)
+          
+                      # Check if the command executed successfully
+                      if result.status_code == 0:
+                          print('Command executed successfully.')
+                          print('STDOUT:', result.std_out.decode())
+                          print('STDERR:', result.std_err.decode())
+                          return
+                      else:
+                          print('Command failed with status code:', result.status_code)
+                          print('STDOUT:', result.std_out.decode())
+                          print('STDERR:', result.std_err.decode())
+          
+                  except Exception as e:
+                      print(f'Error occurred: {e}')
+          
+                  attempts += 1
+                  if attempts < max_retries:
+                      print('Retrying...')
+                      time.sleep(5)  # Wait for 5 seconds before retrying
+          
+              print('Max retries reached. Command execution failed.')
+          
+          # Run the script with retry logic
+          run_script_with_retries(session, powershell_script)
+          "
