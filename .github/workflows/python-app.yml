@@ -25,10 +25,10 @@ on:
 
 
 jobs:
+
   run_script_on_vm:
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name }}
-    needs: [create-os-gallery-image]
     env:
       SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       RESOURCE_GROUP_NAME: ${{ github.event.inputs.resource_group_name }}
